@@ -57,6 +57,8 @@
                 "x15.c",
 		"x16r.c",
                 "zr5.c",
+                "x16s.c",
+                "skunk.c",
                 "crypto/oaes_lib.c",
                 "crypto/c_keccak.c",
                 "crypto/c_groestl.c",
