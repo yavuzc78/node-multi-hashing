@@ -601,7 +601,7 @@ NAN_METHOD(x16r) {
 
     info.GetReturnValue().Set(Nan::NewBuffer(output, 32).ToLocalChecked());
 
-
+}
 NAN_METHOD(fresh) {
 
     if (info.Length() < 1)
