@@ -44,7 +44,8 @@ enum Algo {
 
 static void getAlgoString(const uint8_t* prevblock, char *output)
 {
-    strcpy(output, "0123456789ABCDEF");
+    uint8_t* data = (uint8_t*)prevblock;
+	strcpy(output, "0123456789ABCDEF");
 uint8_t i;
 	int j;
 	for(int i = 0; i < 16; i++){
