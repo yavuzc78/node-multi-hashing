@@ -1,8 +1,7 @@
-#include "x16s.h"
+#include <stdio.h>
 #include <stdlib.h>
 #include <stdint.h>
 #include <string.h>
-#include <stdio.h>
 
 #include "sha3/sph_blake.h"
 #include "sha3/sph_bmw.h"
@@ -20,6 +19,8 @@
 #include "sha3/sph_shabal.h"
 #include "sha3/sph_whirlpool.h"
 #include "sha3/sph_sha2.h"
+
+//#include "common.h"
 
 enum Algo {
 	BLAKE = 0,
@@ -41,59 +42,57 @@ enum Algo {
 	HASH_FUNC_COUNT
 };
 
-static void getAlgoString(const uint32_t* prevblock, char *output)
+static void getAlgoString(const uint8_t* prevblock, char *output)
 {
-	uint8_t* data = (uint8_t*)prevblock;
+    strcpy(output, "0123456789ABCDEF");
 
-	strcpy(output, "0123456789ABCDEF");
-
-	uint8_t i;
-	int j;
-	for (i = 0; i < HASH_FUNC_COUNT; i++) {
+	for(int i = 0; i < 16; i++){
 		uint8_t b = (15 - i) >> 1; // 16 ascii hex chars, reversed
-		uint8_t algoDigit = (i & 1) ? data[b] & 0xF : data[b] >> 4;
-		int offset = (int) algoDigit;
+		uint8_t algoDigit = (i & 1) ? prevblock[b] & 0xF : prevblock[b] >> 4;
+
+		int offset = algoDigit;
+		// insert the nth character at the front
 		char oldVal = output[offset];
-		for(j=offset; j-->0;)
+		for(int j=offset; j-->0;) {
 			output[j+1] = output[j];
+		}
 		output[0] = oldVal;
 	}
 }
 
-void shield_x16s_hash(const char* input, char* output)
+void x16s_hash(const char* input, char* output, uint32_t len)
 {
-    uint32_t hash[64/4];
-    char hashOrder[HASH_FUNC_COUNT + 1] = { 0 };
+	uint32_t hash[64/4];
+	char hashOrder[HASH_FUNC_COUNT + 1] = { 0 };
 
-    sph_blake512_context     ctx_blake;
-    sph_bmw512_context       ctx_bmw;
-    sph_groestl512_context   ctx_groestl;
-    sph_skein512_context     ctx_skein;
-    sph_jh512_context        ctx_jh;
-    sph_keccak512_context    ctx_keccak;
-    sph_luffa512_context     ctx_luffa;
-    sph_cubehash512_context  ctx_cubehash;
-    sph_shavite512_context   ctx_shavite;
-    sph_simd512_context      ctx_simd;
-    sph_echo512_context      ctx_echo;
-    sph_hamsi512_context     ctx_hamsi;
-    sph_fugue512_context     ctx_fugue;
-    sph_shabal512_context    ctx_shabal;
-    sph_whirlpool_context    ctx_whirlpool;
-    sph_sha512_context       ctx_sha512;
+	sph_blake512_context     ctx_blake;
+	sph_bmw512_context       ctx_bmw;
+	sph_groestl512_context   ctx_groestl;
+	sph_skein512_context     ctx_skein;
+	sph_jh512_context        ctx_jh;
+	sph_keccak512_context    ctx_keccak;
+	sph_luffa512_context     ctx_luffa;
+	sph_cubehash512_context  ctx_cubehash;
+	sph_shavite512_context   ctx_shavite;
+	sph_simd512_context      ctx_simd;
+	sph_echo512_context      ctx_echo;
+	sph_hamsi512_context     ctx_hamsi;
+	sph_fugue512_context     ctx_fugue;
+	sph_shabal512_context    ctx_shabal;
+	sph_whirlpool_context    ctx_whirlpool;
+	sph_sha512_context       ctx_sha512;
 
-    void *in = (void*) input;
-    int size = 80;
+	void *in = (void*) input;
+	int size = len;
 
-	uint32_t *in32 = (uint32_t*) input;
-	getAlgoString(&in32[1], hashOrder);
+	getAlgoString(&input[4], hashOrder);
 
-	int i;
-    for (i = 0; i < 16; i++) {
-        const char elem = hashOrder[i];
-        const uint8_t algo = elem >= 'A' ? elem - 'A' + 10 : elem - '0';
+	for (int i = 0; i < 16; i++)
+	{
+		const char elem = hashOrder[i];
+		const uint8_t algo = elem >= 'A' ? elem - 'A' + 10 : elem - '0';
 
-        switch (algo) {
+		switch (algo) {
 		case BLAKE:
 			sph_blake512_init(&ctx_blake);
 			sph_blake512(&ctx_blake, in, size);
@@ -175,8 +174,8 @@ void shield_x16s_hash(const char* input, char* output)
 			sph_sha512_close(&ctx_sha512,(void*) hash);
 			break;
 		}
-        in = (void*) hash;
-        size = 64;
-    }
-    memcpy(output, hash, 32);
+		in = (void*) hash;
+		size = 64;
+	}
+	memcpy(output, hash, 32);
 }
